@@ -1,49 +1,47 @@
-import express from "express"
-import rutas from "./routes/rutas.js"
-import conectarBD from "./bd/bd.js"
+import "dotenv/config"
+import express from "express";
+import rutas from "./routes/rutas.js";
+import conectarBD from "./bd/bd.js";
 import session from "express-session";
 
+const app = express();
 
+// Middleware
+app.use(express.json()); // 👈 faltaban los paréntesis
+app.use(express.urlencoded({ extended: true }));
+app.set("view engine", "ejs");
 
-const app = express()
-app.use(express.json)
-app.use(express.urlencoded({extended: true}))
-app.set("view engine", "ejs")
-
+// Configurar sesión
 app.use(session({
-  secret: "clave_super_secreta",  // puedes cambiarlo
+  secret: process.env.SECRET_SESSION,
   resave: false,
+  name:process.env.NOMBRE_COOKIE,
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    secure: false,  // en true si usas HTTPS
-    maxAge: 1000 * 60 * 60 // 1 hora
+    secure: false,  // cámbialo a true si Render usa HTTPS (normalmente sí)
+    path:"/",
+    maxAge: 1000 * 60 * 60
   }
 }));
 
-// Use the router
-app.use("/", rutas)
+// Rutas
+app.use("/", rutas);
 
-const PORT = process.env.PORT; // Render asigna este puerto automáticamente
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`✅ Servidor en puerto ${PORT}`);
-});
-
-//coneccion a render 
-
+// Iniciar servidor y conectar BD
 const startServer = async () => {
   try {
-    await conectarBD(); // Espera la conexión a MongoDB Atlas
+    await conectarBD(); // Esperar conexión con MongoDB Atlas
     console.log("✅ Conexión establecida con MongoDB Atlas");
 
-    app.listen(PORT, () => {
-      console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+    const PORT = process.env.PORT || 3000;
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`Servidor corriendo en puerto ${PORT}`);
     });
   } catch (error) {
-    console.error("❌ Error al conectar con MongoDB o iniciar el servidor:", error.message);
+    console.error("Error al conectar con MongoDB o iniciar el servidor:", error.message);
+    process.exit(1); // Detiene el proceso si falla la conexión
   }
 };
 
 startServer();
-
-

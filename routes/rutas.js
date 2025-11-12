@@ -1,4 +1,4 @@
-import e, { Router } from "express"
+import  { Router } from "express"
 import { crearCategoria, mostrarCategoria, eliminarCategoria , actualizarCategoria, obtenerCategoriaPorId} from "../bd/CategoriaBd.js"
 import { crearArticulo, mostrarArticulos , eliminarArticulo,mostrarArticuloPorId, editarArticulo } from "../bd/ArticulosBD.js"
 import { registrarUsuario, verificarUsuario } from "../bd/usuarioBD.js"
@@ -18,13 +18,22 @@ router.get("/", (req,res)=>{
     res.render("login.ejs", {titulo: "Login"})
 })
 
+
+
+router.get("/cerrarSesion",(req,res)=>{
+    req.session.destroy()
+    res.clearCookie(process.env.NOMBRE_COOKIE || "session_usuario", { path: "/" })
+    res.redirect("/")
+})
+
 router.post("/login", async (req, res) => {
   const { usuario, contrasenya } = req.body;
   const resultado = await verificarUsuario({ usuario, contrasenya });
 
   // Si el usuario y contraseña son correctos
   if (resultado.exito) {
-    req.session.usuario = resultado.usuario;
+    req.session.usuario = resultado.usuario._id;
+    req.session.nombre = resultado.usuario.nombre;
     res.redirect("/inicio");
   } else {
     // Si no coinciden, vuelve al login con mensaje de error
